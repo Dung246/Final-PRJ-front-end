@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const homePageBtn = document.getElementById("homePage");
-    const bookingPageBtn = document.getElementById("bookingPage");
+    let homePageBtn = document.getElementById("homePage");
+    let bookingPageBtn = document.getElementById("bookingPage");
   
     homePageBtn.addEventListener("click", (event) => {
       event.preventDefault();
