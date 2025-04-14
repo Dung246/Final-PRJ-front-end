@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let user = users.find(user => user.email === email.value.trim() && user.password === password.value);
   
         if (user) {
-            // Lưu người đang đăng nhập
+           
 localStorage.setItem("currentUser", JSON.stringify(user));
 
             if (user.email === "admin@gym.com") {
