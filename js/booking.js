@@ -1,16 +1,35 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let homePageBtn = document.getElementById("homePage");
-    let bookingPageBtn = document.getElementById("bookingPage");
-
+    const homePageBtn = document.getElementById("homePage");
+    const bookingPageBtn = document.getElementById("bookingPage");
+  
     homePageBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        window.location.href = "gymWeb.html";
+      event.preventDefault();
+      window.location.href = "gymWeb.html";
     });
-
     bookingPageBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        window.location.href = "booking.html";
+      event.preventDefault();
+      window.location.href = "booking.html";
     });
+  });
+document.addEventListener("DOMContentLoaded", () => {
+    let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) {
+        alert("Vui lòng đăng nhập trước.");
+        window.location.href = "index.html";
+        return;
+    }
+    let fullName = currentUser.name;
+    let email = currentUser.email;
+    let schedulesKey = "schedules_" + email;
+    let schedules = JSON.parse(localStorage.getItem(schedulesKey)) || [];
+    if (schedules.length === 0) {
+        schedules = [
+            { classType: "Gym", date: "2025-04-01", time: "10:00", fullName: fullName, email: email },
+            { classType: "Yoga", date: "2025-04-02", time: "18:00", fullName: fullName, email: email },
+            { classType: "Zumba", date: "2025-04-03", time: "07:30", fullName: fullName, email: email }
+        ];
+        localStorage.setItem(schedulesKey, JSON.stringify(schedules));
+    }
 
     let modal = document.getElementById("scheduleModal");
     let openModalBtn = document.getElementById("openModal");
@@ -18,30 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let scheduleForm = document.getElementById("scheduleForm");
     let scheduleList = document.getElementById("scheduleList");
 
-    let currentUser = JSON.parse(localStorage.getItem("loggedInUser"));
-    if (!currentUser) {
-        alert("Vui lòng đăng nhập trước.");
-        window.location.href = "index.html";
-    }
-    let fullName = currentUser.name;
-    let email = currentUser.email;
-    
-    
-    
-
-    let schedules = JSON.parse(localStorage.getItem("schedules")) || [];
-
-    if (schedules.length === 0) {
-        schedules = [
-            { classType: "Gym", date: "01-04-2025", time: "10:00", fullName: fullName, email: email },
-            { classType: "Yoga", date: "02-04-2025", time: "18:00", fullName: fullName, email: email },
-            { classType: "Zumba", date: "03-04-2025", time: "07:30", fullName: fullName, email: email }
-        ];
-        localStorage.setItem("schedules", JSON.stringify(schedules));
-    }
-
     let editingIndex = null;
-
     function renderScheduleList() {
         scheduleList.innerHTML = "";
         schedules.forEach((schedule, index) => {
@@ -52,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${schedule.time}</td>
                 <td>${schedule.fullName}</td>
                 <td>${schedule.email}</td>
-                <td class="thao-tac">
+                <td>
                     <button class="edit-btn" onclick="editSchedule(${index})">Sửa</button>
                     <button class="delete-btn" onclick="confirmDelete(${index})">Xóa</button>
                 </td>
@@ -68,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
         scheduleForm.reset();
         editingIndex = null;
         resetErrors();
-        
         let today = new Date().toISOString().split("T")[0]; 
         document.getElementById("date").setAttribute("min", today); 
         document.getElementById("date").value = today; 
@@ -76,7 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = "flex";
     });
 
-    closeModalBtn.addEventListener("click", () => modal.style.display = "none");
+    closeModalBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+    });
+
     scheduleForm.addEventListener("submit", (event) => {
         event.preventDefault();
 
@@ -97,12 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
             schedule.date === date &&
             schedule.time === time
         );
-
         if (isDuplicate) {
             isValid = false;
             showError("dateError", "Lịch này đã tồn tại. Vui lòng chọn thời gian khác");
         }
+
         if (isValid) {
+
             let newSchedule = { classType, date, time, fullName, email };
 
             if (editingIndex !== null) {
@@ -110,35 +109,39 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 schedules.push(newSchedule);
             }
-
-            localStorage.setItem("schedules", JSON.stringify(schedules));
+            localStorage.setItem(schedulesKey, JSON.stringify(schedules));
             modal.style.display = "none";
             renderScheduleList();
         }
     });
 
+    function resetErrors() {
+        document.querySelectorAll(".error-message").forEach(el => el.textContent = "");
+    }
+
+    function showError(id, message) {
+        document.getElementById(id).textContent = message;
+    }
     window.editSchedule = (index) => {
         let schedule = schedules[index];
         document.getElementById("classType").value = schedule.classType;
         document.getElementById("date").value = schedule.date;
         document.getElementById("time").value = schedule.time;
         let today = new Date().toISOString().split("T")[0];
-        document.getElementById("date").setAttribute("min", today); 
+        document.getElementById("date").setAttribute("min", today);
         if (new Date(schedule.date) < new Date(today)) {
             document.getElementById("date").value = today;
         }
-
         editingIndex = index;
         modal.style.display = "flex";
     };
-
     window.confirmDelete = (index) => {
         let confirmModal = document.getElementById("deleteModal");
         confirmModal.style.display = "flex";
 
         document.getElementById("confirmDelete").onclick = () => {
             schedules.splice(index, 1);
-            localStorage.setItem("schedules", JSON.stringify(schedules));
+            localStorage.setItem(schedulesKey, JSON.stringify(schedules));
             confirmModal.style.display = "none";
             renderScheduleList();
         };
@@ -148,13 +151,5 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     };
 
-    function resetErrors() {
-        let errorMessages = document.querySelectorAll(".error-message");
-        errorMessages.forEach((error) => error.textContent = "");
-    }
-
-    function showError(id, message) {
-        document.getElementById(id).textContent = message;
-    }
     renderScheduleList();
 });
